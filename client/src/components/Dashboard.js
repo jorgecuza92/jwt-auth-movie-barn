@@ -1,30 +1,49 @@
 import { useEffect } from 'react';
 import { useState } from 'react';
+import axios from 'axios'
+import { setAuthenticationHeader } from '../utils/authenticate';
 
-function Dashboard() {
+function Dashboard(props) {
 
   const [movies, setMovies] = useState([])
 
   useEffect(() => {
-
     fetchAllMovies()
-
   }, [])
 
-  const fetchAllMovies = () => {
-    const token = localStorage.getItem('jsonwebtoken')
-    const username = localStorage.getItem('username')
-    
-    fetch(`http://localhost:8080/movies/${username}`, {
-      method: "GET",
-      headers: {
-        'Authorization': `Bearer ${token}`
+  const fetchMyMovies = () => {
+
+    axios.get('http://localhost:8080/my-movies')
+    .then(response => {
+      if(response.data.error) {
+        console.log(response.data.error)
+      } else {
+          setMovies(response.data)
       }
     })
-    .then(response => response.json())
-    .then(movies => {
-      setMovies(movies)
+  }
+
+  const signOut = () => {
+    // remove token from local storage
+    localStorage.removeItem('jsonwebtoken')
+    localStorage.removeItem('username')
+
+    // clear up auth headers
+    setAuthenticationHeader(null)
+    // perform a dispatch and set the isAuthenticated global state to false
+    // props.onSignOut()
+    props.history.push('/')
+  }
+
+  const fetchAllMovies = () => {
+
+    const username = localStorage.getItem('username')
+
+    axios.get(`http://localhost:8080/movies/${username}`)
+    .then(response => {
+      setMovies(response.data)
     })
+
   }
 
   const movieItems = movies.map((movie) => {
@@ -32,13 +51,15 @@ function Dashboard() {
                 Year: {movie.year} --
                 Director: {movie.director} --
                 Genre: {movie.genre}
-          </div>
+    </div>
   })
 
   return (
     <div>
       <h1>Dashboard</h1>
       {movieItems}
+      <button onClick={fetchMyMovies}>Get My Movies!</button>
+      <button onClick={signOut}>Sign Out</button>
     </div>
   )
 }

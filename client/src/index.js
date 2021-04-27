@@ -7,17 +7,31 @@ import { BrowserRouter, Switch, Route } from 'react-router-dom';
 import BaseLayout from './components/BaseLayout';
 import Login from './components/Login'
 import Dashboard from './components/Dashboard';
+import { createStore } from 'redux';
+import { Provider } from 'react-redux';
+import reducer from './store/reducer';
+import { setAuthenticationHeader } from './utils/authenticate';
+import requireAuth from './components/requireAuth'
+
+const store = createStore(reducer, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
+
+const token = localStorage.getItem('jsonwebtoken')
+setAuthenticationHeader(token)
+// perform a dispatch to change the global state based on the token
+store.dispatch({type: "ON_LOGIN", payload: token})
 
 ReactDOM.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <BaseLayout>
-        <Switch>
-          <Route exact path = '/' component = {Login} />
-          <Route path = '/dashboard' component = {Dashboard} />
-        </Switch>
-      </BaseLayout>
-    </BrowserRouter>
+    <Provider store = {store}>
+      <BrowserRouter>
+        <BaseLayout>
+          <Switch>
+            <Route exact path = '/' component = {Login} />
+            <Route path = '/dashboard' component = {requireAuth(Dashboard)} />
+          </Switch>
+        </BaseLayout>
+      </BrowserRouter>
+    </Provider>
   </React.StrictMode>,
   document.getElementById('root')
 );

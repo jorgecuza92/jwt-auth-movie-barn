@@ -3,11 +3,12 @@ const express = require('express')
 const app = express()
 const jwt = require('jsonwebtoken')
 const cors = require('cors')
+const authenticate = require('./authMiddleware')
 
 app.use(cors())
 app.use(express.json())
 
-const users = [{
+global.users = [{
   username: 'jorge123',
   password: 'password'
 }]
@@ -18,27 +19,19 @@ const movies = [
   {title: 'The Fly', year: '1986', director: 'David Cronenberg', genre: 'Horror/Sci-Fi', username: 'jorge123'}
 ]
 
-app.get('/movies/:username', (req, res) => {
+app.get('/movies', (req,res) => {
+  res.json([])
+})
 
-  let headers = req.headers['authorization']
-  if (headers) {
-    const token = headers.split(' ')[1]
-    const decoded = jwt.verify(token, 'THATSECRETSAUCE')
-    if (decoded) {
-      const username = decoded.username
-      const authUser = users.find(user => user.username == username)
-      if (authUser) {
-        const userMovies = movies.filter(movie => movie.username == username)
-        res.json(userMovies)
-      } else {
-        res.json({error: 'Unable to authenticate'})
-      }
-    } else {
-      res.json({error: 'Unable to authenticate'})
-    }
-  } else {
-    res.json({error: 'Required headers are missing...'})
-  }
+app.get('/my-movies', authenticate, (req,res) => {
+  res.json([{title: 'Kill List', year: '2011', director: 'Ben Wheatley', genre: 'Horror/Thriller'}])
+})
+
+app.get('/movies/:username', authenticate, (req, res) => {
+  const username = req.params.username
+  const userMovies = movies.filter(movie => movie.username == username)
+
+  res.json(userMovies)
 })
 
 
